@@ -129,9 +129,16 @@ impl Game {
 
     fn handle_player_input(&mut self) {
         while let Some((client_id, input)) = self.server.get_client_input() {
+            
             if let Some(player_idx) = self.lobby.players.get(&client_id.into()) {
                 let player = &mut self.world.entities[*player_idx];
-
+                 if input.fireball {
+		    let msg = ServerMessages::PlayerFireball {
+			id: client_id.into(),
+			target: player.target
+		    };
+		    self.msg_queue.push_back(msg);
+		}
                 player.vel.x = (input.right as i8 - input.left as i8) as f32;
                 player.vel.y = (input.down as i8 - input.up as i8) as f32;
     

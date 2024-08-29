@@ -10,6 +10,7 @@ pub struct ClientInput {
     pub up: bool,
     pub down: bool,
     pub right: bool,
+    pub fireball: bool,
     pub mouse_target_pos: Option<Vec2D>,
     pub mouse_target: Option<EntityId>
 }
@@ -36,6 +37,10 @@ pub enum ServerMessages {
     PlayerUpdate {
         id: EntityId,
         pos: Vec2D,
+        target: Option<EntityId>
+    },
+    PlayerFireball {
+        id: EntityId,
         target: Option<EntityId>
     },
     EnemyCreate {

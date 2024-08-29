@@ -10,6 +10,7 @@ pub mod client;
 mod world;
 mod map;
 mod camera;
+mod pes;
 
 #[derive(Default)]
 pub struct Lobby {

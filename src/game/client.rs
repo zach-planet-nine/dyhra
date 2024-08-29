@@ -1,6 +1,6 @@
 use macroquad::{prelude::*, ui::root_ui};
 
-use crate::{game::{world::Entity, Sprite}, net::client::Client, ClientChannel, ClientInput, ClientMessages, EntityId, ServerMessages, Vec2D};
+use crate::{game::{world::Entity, Sprite, pes::PES}, net::client::Client, ClientChannel, ClientInput, ClientMessages, EntityId, ServerMessages, Vec2D};
 
 use super::{camera::Viewport, map::{Map, TILE_OFFSET, TILE_SIZE}, world::World, Lobby};
 
@@ -72,6 +72,13 @@ impl Game {
                         player.target = target;
                     }
                 }
+                ServerMessages::PlayerFireball { id, target } => {
+                    println!("Add a fireball");
+                    &self.world.entities.effects.push((
+                                PES::explosion(),
+                                vec2(5, 6),
+                            ));
+                }
                 ServerMessages::EnemyCreate { id, pos, health } => {
                     println!("Enemy {} spawned", id.raw());
 
@@ -109,6 +116,7 @@ impl Game {
     pub fn draw(&mut self) {
         self.map.draw();
         self.draw_entities();
+        self.draw_effects();
         self.viewport.draw();
 
         let mouse_pos = self.viewport.camera.screen_to_world(mouse_position().into());
@@ -172,13 +180,15 @@ impl Game {
             up: is_key_down(KeyCode::W) || is_key_down(KeyCode::Up),
             down: is_key_down(KeyCode::S) || is_key_down(KeyCode::Down),
             right: is_key_down(KeyCode::D) || is_key_down(KeyCode::Right),
+            fireball: is_key_down(KeyCode::F),
             mouse_target_pos,
             mouse_target
         };
 
-        if input.left || input.up || input.down || input.right || input.mouse_target_pos.is_some() || input.mouse_target.is_some() {
+        if input.left || input.up || input.down || input.right || input.fireball || input.mouse_target_pos.is_some() || input.mouse_target.is_some() {
             self.client.send(ClientChannel::ClientInput, input);
         }
+       
     }
 
     fn update_entities(&mut self) {
@@ -289,6 +299,12 @@ impl Game {
                     }
                 }
             }
+        }
+    }
+
+    fn draw_effects(&mut self) {
+        for (effect, coords) in &self.world.entities.effects {
+            effect.draw(*coords);
         }
     }
 }
