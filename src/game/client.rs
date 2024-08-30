@@ -1,6 +1,6 @@
 use macroquad::{prelude::*, ui::root_ui};
 
-use crate::{game::{world::Entity, Sprite, pes::PES}, net::client::Client, ClientChannel, ClientInput, ClientMessages, EntityId, ServerMessages, Vec2D};
+use crate::{game::{world::Entity, Sprite}, net::client::Client, ClientChannel, ClientInput, ClientMessages, EntityId, ServerMessages, Vec2D};
 
 use super::{camera::Viewport, map::{Map, TILE_OFFSET, TILE_SIZE}, world::World, Lobby};
 
@@ -72,12 +72,23 @@ impl Game {
                         player.target = target;
                     }
                 }
-                ServerMessages::PlayerFireball { id, target } => {
-                    println!("Add a fireball");
-                    &self.world.entities.effects.push((
-                                PES::explosion(),
-                                vec2(5, 6),
-                            ));
+                ServerMessages::PlayerFireball { id, pos, target } => {
+                    println!("Fireball {} spawned", id.raw());
+
+                    if let Some(target_id) = target {
+                        if let Some(enemy_idx) = self.lobby.enemies.get(&target_id) {
+                            let enemy = self.world.entities[*enemy_idx];
+
+                            let fireball = Entity {
+                                pos,
+                                target_pos: Some(enemy.pos),
+                                ..Default::default()
+                            };
+                            let fireball_idx = self.world.spawn_entity(fireball);
+                            self.lobby.fireballs.insert(id, fireball_idx);
+                        }
+
+                    }
                 }
                 ServerMessages::EnemyCreate { id, pos, health } => {
                     println!("Enemy {} spawned", id.raw());
@@ -116,7 +127,6 @@ impl Game {
     pub fn draw(&mut self) {
         self.map.draw();
         self.draw_entities();
-        self.draw_effects();
         self.viewport.draw();
 
         let mouse_pos = self.viewport.camera.screen_to_world(mouse_position().into());
@@ -180,15 +190,14 @@ impl Game {
             up: is_key_down(KeyCode::W) || is_key_down(KeyCode::Up),
             down: is_key_down(KeyCode::S) || is_key_down(KeyCode::Down),
             right: is_key_down(KeyCode::D) || is_key_down(KeyCode::Right),
-            fireball: is_key_down(KeyCode::F),
+            f_one: is_key_down(KeyCode::F1),
             mouse_target_pos,
             mouse_target
         };
 
-        if input.left || input.up || input.down || input.right || input.fireball || input.mouse_target_pos.is_some() || input.mouse_target.is_some() {
+        if input.left || input.up || input.down || input.right || input.f_one || input.mouse_target_pos.is_some() || input.mouse_target.is_some() {
             self.client.send(ClientChannel::ClientInput, input);
         }
-       
     }
 
     fn update_entities(&mut self) {
@@ -203,7 +212,7 @@ impl Game {
             }
             
             if let Some(target) = player.target {
-                let msg = ClientMessages::PlayerAttack { id: *player_id, enemy_id: target };
+                let msg = ClientMessages::PlayerBasicAttack { id: *player_id, enemy_id: target };
                 self.client.send(ClientChannel::ClientMessages, msg);
             }
 
@@ -227,6 +236,17 @@ impl Game {
                 x: rand::gen_range(-1.0, 1.0),
                 y: rand::gen_range(-1.0, 1.0),
             };
+        }
+
+        for (_, fireball_idx) in &self.lobby.fireballs {
+            let fireball = &mut self.world.entities[*fireball_idx];
+
+            let start_pos = Vec2::from(fireball.pos);
+            let speed = 5.0;
+
+            if let Some(target_pos) = fireball.target_pos {
+                fireball.pos = start_pos.lerp(target_pos.into(), speed * get_frame_time()).into();
+            }
         }
     }
 
@@ -300,11 +320,11 @@ impl Game {
                 }
             }
         }
-    }
 
-    fn draw_effects(&mut self) {
-        for (effect, coords) in &self.world.entities.effects {
-            effect.draw(*coords);
+        for (fireball_id, fireball_idx) in &self.lobby.fireballs {
+            let fireball = &mut self.world.entities[*fireball_idx];
+
+            fireball.pos.draw_rect(vec2(5.0, 5.0), RED);
         }
     }
 }
