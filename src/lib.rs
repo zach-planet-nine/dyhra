@@ -10,14 +10,14 @@ pub struct ClientInput {
     pub up: bool,
     pub down: bool,
     pub right: bool,
-    pub fireball: bool,
+    pub f_one: bool,
     pub mouse_target_pos: Option<Vec2D>,
-    pub mouse_target: Option<EntityId>
+    pub mouse_target: Option<EntityId>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum ClientMessages {
-    PlayerAttack {
+    PlayerBasicAttack {
         id: EntityId,
         enemy_id: EntityId
     }
@@ -41,6 +41,7 @@ pub enum ServerMessages {
     },
     PlayerFireball {
         id: EntityId,
+        pos: Vec2D,
         target: Option<EntityId>
     },
     EnemyCreate {

@@ -10,8 +10,7 @@ pub struct Entity {
     pub target_pos: Option<Vec2D>,
     pub target: Option<EntityId>,
     pub health: f32,
-    pub damage: f32,
-    pub effects: Vec2D
+    pub damage: f32
 }
 
 #[derive(Default)]

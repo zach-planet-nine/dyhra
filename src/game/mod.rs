@@ -15,7 +15,8 @@ mod pes;
 #[derive(Default)]
 pub struct Lobby {
     players: HashMap<EntityId, Index>,
-    enemies: HashMap<EntityId, Index>
+    enemies: HashMap<EntityId, Index>,
+    fireballs: HashMap<EntityId, Index>
 }
 
 #[derive(Default, Clone, Copy, Serialize, Deserialize, Debug)]

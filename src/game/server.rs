@@ -96,7 +96,7 @@ impl Game {
 
         while let Some((_client_id, client_msg)) = self.server.get_client_msg() {
             match client_msg {
-                ClientMessages::PlayerAttack { id, enemy_id } => {
+                ClientMessages::PlayerBasicAttack { id, enemy_id } => {
                     if let Some(player_idx) = self.lobby.players.get(&id) {
                         if let Some(enemy_idx) = self.lobby.enemies.get(&enemy_id) {
                             let player = self.world.entities[*player_idx];
@@ -129,37 +129,38 @@ impl Game {
 
     fn handle_player_input(&mut self) {
         while let Some((client_id, input)) = self.server.get_client_input() {
-            
             if let Some(player_idx) = self.lobby.players.get(&client_id.into()) {
                 let player = &mut self.world.entities[*player_idx];
-                 if input.fireball {
-		    let msg = ServerMessages::PlayerFireball {
-			id: client_id.into(),
-			target: player.target
-		    };
-		    self.msg_queue.push_back(msg);
-		}
+
                 player.vel.x = (input.right as i8 - input.left as i8) as f32;
                 player.vel.y = (input.down as i8 - input.up as i8) as f32;
-    
+
                 if let Some(mouse_target_pos) = input.mouse_target_pos {
                     player.pos = mouse_target_pos;
                 } else {
                     player.pos += player.vel * TILE_SIZE.into();
                 }
-    
+
                 if let Some(mouse_target) = input.mouse_target {
                     player.target = Some(mouse_target);
+
+                    if input.f_one {
+                        let msg = ServerMessages::PlayerFireball {
+                            id: client_id.into(),
+                            pos: player.pos,
+                            target: player.target
+                        };
+                        self.msg_queue.push_back(msg);
+                    }
                 }
-        
+
                 let msg = ServerMessages::PlayerUpdate {
                     id: client_id.into(),
                     pos: player.pos,
-                    target: player.target
+                    target: player.target,
                 };
                 self.msg_queue.push_back(msg);
             }
         }
     }
-    
 }
